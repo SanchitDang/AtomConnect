@@ -17,6 +17,7 @@ import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import PostModal from "../Posts";
 
 const db = getFirestore(firebaseApp);
 
@@ -77,6 +78,19 @@ const ClubsTable = () => {
     }
   };
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClubId, setSelectedClubId] = useState(null);
+
+  const handleOpenModal = (id) => {
+    setSelectedClubId(id); // Set the clubId dynamically
+    setModalOpen(true); // Open the modal
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false); // Close the modal
+    setSelectedClubId(null); // Reset the clubId
+  };
+
   return (
     <MDBox pt={6} pb={3} pl={40}>
       <Grid container spacing={6}>
@@ -120,7 +134,11 @@ const ClubsTable = () => {
                     {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
-                          <img src={user.ClubLogo} alt="" style={{ width: '50px', height: '50px' }} />
+                          <img
+                            src={user.ClubLogo}
+                            alt=""
+                            style={{ width: "50px", height: "50px" }}
+                          />
                         </TableCell>
                         <TableCell>{user.id}</TableCell>
                         <TableCell>{user.ClubUniversity}</TableCell>
@@ -142,6 +160,17 @@ const ClubsTable = () => {
                           >
                             Delete
                           </MDButton>
+                          <MDButton
+                            color="warning"
+                            size="small"
+                            onClick={() => handleOpenModal(user.id)} // Pass user.id dynamically
+                            sx={{ mt: 1, ml: 2 }}
+                          >
+                            Show Posts
+                          </MDButton>
+
+
+
                         </TableCell>
                       </TableRow>
                     ))}
@@ -153,6 +182,11 @@ const ClubsTable = () => {
         </Grid>
       </Grid>
 
+      {/* Modal */}
+      {modalOpen && selectedClubId && (
+        <PostModal open={modalOpen} onClose={handleCloseModal} clubId={selectedClubId} />
+      )}
+
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
         <DialogTitle>Edit User</DialogTitle>
@@ -163,9 +197,7 @@ const ClubsTable = () => {
             type="text"
             fullWidth
             value={editedData.ClubUniversity || ""}
-            onChange={(e) =>
-              setEditedData((prev) => ({ ...prev, ClubUniversity: e.target.value }))
-            }
+            onChange={(e) => setEditedData((prev) => ({ ...prev, ClubUniversity: e.target.value }))}
           />
           <TextField
             margin="dense"
@@ -173,16 +205,11 @@ const ClubsTable = () => {
             type="text"
             fullWidth
             value={editedData.ClubName || ""}
-            onChange={(e) =>
-              setEditedData((prev) => ({ ...prev, ClubName: e.target.value }))
-            }
+            onChange={(e) => setEditedData((prev) => ({ ...prev, ClubName: e.target.value }))}
           />
         </DialogContent>
         <DialogActions>
-          <MDButton
-            color="info"
-            onClick={() => setEditDialogOpen(false)}
-          >
+          <MDButton color="info" onClick={() => setEditDialogOpen(false)}>
             Cancel
           </MDButton>
           <MDButton color="success" onClick={handleSaveUser}>
