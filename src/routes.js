@@ -49,6 +49,8 @@ import SignUp from "layouts/authentication/sign-up";
 // @mui icons
 import Icon from "@mui/material/Icon";
 import UsersTable from "./Custom/Admin/Users";
+import UniversitiesTable from "./Custom/Admin/Universities";
+import ClubsTable from "./Custom/Admin/Clubs";
 
 const routes = [
   {
@@ -165,7 +167,7 @@ const routes = [
     protected: true,
     icon: <Icon fontSize="small">group_work</Icon>, // Icon representing groups or clubs
     route: "/clubs",
-    component: <Dashboard />,
+    component: <ClubsTable />,
   },
   {
     type: "collapse",
@@ -174,7 +176,7 @@ const routes = [
     protected: true,
     icon: <Icon fontSize="small">school</Icon>, // Icon representing educational institutions
     route: "/universities",
-    component: <Dashboard />,
+    component: <UniversitiesTable />,
   },
   {
     type: "collapse",

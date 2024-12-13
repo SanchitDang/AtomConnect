@@ -20,7 +20,7 @@ import MDButton from "components/MDButton";
 
 const db = getFirestore(firebaseApp);
 
-const UsersTable = () => {
+const UniversitiesTable = () => {
   const [users, setUsers] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -29,7 +29,7 @@ const UsersTable = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersCollection = collection(db, "users");
+        const usersCollection = collection(db, "Universities");
         const usersSnapshot = await getDocs(usersCollection);
         const usersList = usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setUsers(usersList);
@@ -43,14 +43,14 @@ const UsersTable = () => {
 
   const handleEditUser = (user) => {
     setCurrentUser(user);
-    setEditedData({ email: user.email, display_name: user.display_name });
+    setEditedData({ uniPlace: user.uniPlace, uniName: user.uniName });
     setEditDialogOpen(true);
   };
 
   const handleSaveUser = async () => {
     if (!currentUser) return;
     try {
-      await updateDoc(doc(db, "users", currentUser.id), editedData);
+      await updateDoc(doc(db, "Universities", currentUser.id), editedData);
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === currentUser.id ? { ...user, ...editedData } : user
@@ -68,7 +68,7 @@ const UsersTable = () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
     if (confirmDelete) {
       try {
-        await deleteDoc(doc(db, "users", userId));
+        await deleteDoc(doc(db, "Universities", userId));
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
         alert("User deleted successfully.");
       } catch (error) {
@@ -93,7 +93,7 @@ const UsersTable = () => {
               coloredShadow="info"
             >
               <MDTypography variant="h6" color="white">
-                User Management
+                University Management
               </MDTypography>
             </MDBox>
             <MDBox p={3}>
@@ -108,10 +108,10 @@ const UsersTable = () => {
                         <strong>ID</strong>
                       </TableCell>
                       <TableCell>
-                        <strong>Email</strong>
+                        <strong>Place</strong>
                       </TableCell>
                       <TableCell>
-                        <strong>Name</strong>
+                        <strong>University Name</strong>
                       </TableCell>
                       <TableCell>
                         <strong>Actions</strong>
@@ -120,11 +120,11 @@ const UsersTable = () => {
                     {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>
-                          <img src={user.photo_url} alt="" style={{ width: '50px', height: '50px' }} />
+                          <img src={user.uniLogo} alt="" style={{ width: '50px', height: '50px' }} />
                         </TableCell>
                         <TableCell>{user.id}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.display_name}</TableCell>
+                        <TableCell>{user.uniPlace}</TableCell>
+                        <TableCell>{user.uniName}</TableCell>
                         <TableCell>
                           <MDButton
                             color="success"
@@ -159,12 +159,12 @@ const UsersTable = () => {
         <DialogContent>
           <TextField
             margin="dense"
-            label="Email"
-            type="email"
+            label="Place"
+            type="text"
             fullWidth
-            value={editedData.email || ""}
+            value={editedData.uniPlace || ""}
             onChange={(e) =>
-              setEditedData((prev) => ({ ...prev, email: e.target.value }))
+              setEditedData((prev) => ({ ...prev, uniPlace: e.target.value }))
             }
           />
           <TextField
@@ -172,9 +172,9 @@ const UsersTable = () => {
             label="Name"
             type="text"
             fullWidth
-            value={editedData.display_name || ""}
+            value={editedData.uniName || ""}
             onChange={(e) =>
-              setEditedData((prev) => ({ ...prev, display_name: e.target.value }))
+              setEditedData((prev) => ({ ...prev, uniName: e.target.value }))
             }
           />
         </DialogContent>
@@ -194,4 +194,4 @@ const UsersTable = () => {
   );
 };
 
-export default UsersTable;
+export default UniversitiesTable;
