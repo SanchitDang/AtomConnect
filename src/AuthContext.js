@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Create a document for the user in the 'users' collection
-    await setDoc(doc(db, "users", user.uid), userDetails);
+    await setDoc(doc(db, "admins", user.uid), userDetails);
     
     return user;
   };
