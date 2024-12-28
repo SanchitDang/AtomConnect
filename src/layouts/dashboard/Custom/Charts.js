@@ -1,11 +1,14 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement } from 'chart.js';
 import { Card, CardContent, Typography, Grid } from '@mui/material';
 
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { firebaseApp } from "../../../firebase";
 // Register necessary components for Chart.js
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement);
 
+const db = getFirestore(firebaseApp);
 const CampaignCharts = () => {
   // Dummy data simulating an app's performance metrics
   const dateLabels = ["01/10/2024", "02/10/2024", "03/10/2024", "04/10/2024", "05/10/2024"];
@@ -52,9 +55,38 @@ const CampaignCharts = () => {
     ],
   };
 
-  const conversionLabels = ["Free Users", "Subscribers", "VIP Members"];
-  const conversionData = [75, 20, 5];
-  
+  const conversionLabels = ["Users", "Universities", "Events"];
+  // const conversionData = [75, 20, 5];
+  const [conversionData, setConversionData] = useState([0, 0, 0]);
+
+  useEffect(() => {
+    const fetchConversionData = async () => {
+      try {
+        // Fetch Users
+        const usersCollection = collection(db, "users");
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersCount = usersSnapshot.size;
+
+        // Fetch Universities
+        const universitiesCollection = collection(db, "Universities");
+        const universitiesSnapshot = await getDocs(universitiesCollection);
+        const universitiesCount = universitiesSnapshot.size;
+
+        // Fetch Events
+        const eventsCollection = collection(db, "Events");
+        const eventsSnapshot = await getDocs(eventsCollection);
+        const eventsCount = eventsSnapshot.size;
+
+        // Update conversionData state
+        setConversionData([usersCount, universitiesCount, eventsCount]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchConversionData();
+  }, []);
+
   const conversionBreakdownData = {
     labels: conversionLabels,
     datasets: [
@@ -65,16 +97,16 @@ const CampaignCharts = () => {
   return (
     <Grid container spacing={3}>
       {/* Date-wise Clicks/CTR/Spend/Impressions */}
-      <Grid item xs={12}>
-        <Card style={{ height: '400px' }}>
-          <CardContent style={{ height: '350px', overflow: 'hidden' }}>
-            <Typography variant="h6">Date-wise Clicks, CTR, Spend & Impressions</Typography>
-            <div style={{ height: '300px' }}>
-              <Line data={dateWiseData} options={{ maintainAspectRatio: false }} />
-            </div>
-          </CardContent>
-        </Card>
-      </Grid>
+      {/*<Grid item xs={12}>*/}
+      {/*  <Card style={{ height: '400px' }}>*/}
+      {/*    <CardContent style={{ height: '350px', overflow: 'hidden' }}>*/}
+      {/*      <Typography variant="h6">Date-wise Clicks, CTR, Spend & Impressions</Typography>*/}
+      {/*      <div style={{ height: '300px' }}>*/}
+      {/*        <Line data={dateWiseData} options={{ maintainAspectRatio: false }} />*/}
+      {/*      </div>*/}
+      {/*    </CardContent>*/}
+      {/*  </Card>*/}
+      {/*</Grid>*/}
 
       {/* Age Group Performance */}
       {/*<Grid item xs={12} md={6}>*/}
@@ -102,8 +134,8 @@ const CampaignCharts = () => {
       <Grid item xs={12} md={6}>
         <Card style={{ height: '350px', overflow: 'hidden' }}>
           <CardContent>
-            <Typography variant="h6">User Type Conversion Breakdown</Typography>
-            <div style={{ height: '250px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Typography variant="h6">Classification</Typography>
+            <div style={{ height: '270px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <Pie data={conversionBreakdownData} options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }} />
             </div>
           </CardContent>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc,arrayUnion, getDoc  } from "firebase/firestore";
 import { firebaseApp } from "../../../firebase.js";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -17,13 +17,15 @@ import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 
 const db = getFirestore(firebaseApp);
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const [editedData, setEditedData] = useState({});
 
   useEffect(() => {
@@ -76,6 +78,98 @@ const UsersTable = () => {
       }
     }
   };
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogOpenAdmin, setEditDialogOpenAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [universities, setUniversities] = useState([]);
+  const [clubs, setClubs] = useState([]);
+  const [selectedClub, setSelectedClub] = useState("");
+
+  const handleEditAdmin = async (user) => {
+    setCurrentUser(user);
+    setEditDialogOpenAdmin(true);
+
+    try {
+      // Fetch Universities and Clubs
+      const uniCollection = collection(db, "Universities");
+      const uniSnapshot = await getDocs(uniCollection);
+      const universitiesData = await Promise.all(
+        uniSnapshot.docs.map(async (doc) => {
+          const clubsCollection = collection(db, "Universities", extractUniId(user.uniId), "Clubs");
+          const clubsSnapshot = await getDocs(clubsCollection);
+          const clubsData = clubsSnapshot.docs.map((clubDoc) => ({
+            id: clubDoc.id,
+            ...clubDoc.data(),
+          }));
+          setClubs(clubsData);
+          console.log("clubsData");
+          console.log(clubsData);
+          return {
+            id: doc.id,
+            uniId: doc.data().uniId,
+            clubs: clubsData,
+          };
+        })
+      );
+
+      setUniversities(universitiesData);
+    } catch (error) {
+      console.error("Error fetching universities and clubs:", error);
+    }
+  };
+
+  const extractUniId = (uniId) => {
+    const prefix = "/Universities/";
+    return uniId.startsWith(prefix) ? uniId.slice(prefix.length) : null;
+  };
+
+  const handleClubSelection = (clubId) => {
+    setSelectedClub(clubId);
+  };
+
+
+  const printClubData = async () => {
+    try {
+      // Extract the university ID
+      const universityId = extractUniId(currentUser.uniId);
+
+      // Reference the university document
+      const universityDocRef = doc(db, "Universities", universityId);
+
+      // Fetch the university document
+      const universityDoc = await getDoc(universityDocRef);
+
+      if (!universityDoc.exists()) {
+        console.error("University not found!");
+        return;
+      }
+
+      // Reference the specific club in the Clubs collection
+      const clubDocRef = doc(db, "Universities", universityId, "Clubs", selectedClub);
+
+      // Fetch the club document
+      const clubDoc = await getDoc(clubDocRef);
+
+      if (!clubDoc.exists()) {
+        console.error("Club not found!");
+        return;
+      }
+
+      // Add the current user to the ClubCoreMembers array
+      await updateDoc(clubDocRef, {
+        ClubCoreMembers: arrayUnion({
+          id: currentUser.id,
+          displayName: currentUser.display_name,
+        }),
+      });
+
+      console.log("Successfully updated ClubCoreMembers.");
+    } catch (error) {
+      console.error("Error updating club data:", error);
+    }
+  };
+
 
   return (
     <MDBox pt={6} pb={3} pl={40}>
@@ -142,6 +236,22 @@ const UsersTable = () => {
                           >
                             Delete
                           </MDButton>
+                          <MDButton
+                            color="success"
+                            size="small"
+                            onClick={() => handleEditAdmin(user)}
+                            sx={{ mt: 1, ml: 2 }}
+                          >
+                            Change Club Admin
+                          </MDButton>
+                          <MDButton
+                            color="warning"
+                            size="small"
+                            onClick={() => handleEditAdmin(user)}
+                            sx={{ mt: 1, ml: 2 }}
+                          >
+                            Change Club Manager
+                          </MDButton>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -190,6 +300,42 @@ const UsersTable = () => {
           </MDButton>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Admin Dialog */}
+      <Dialog open={editDialogOpenAdmin} onClose={() => setEditDialogOpenAdmin(false)}>
+        <DialogTitle>Edit Admin</DialogTitle>
+        <DialogContent>
+          <text>Make Admin for:</text>
+          <FormControl fullWidth margin="dense">
+            <Select
+              value={selectedClub}
+              onChange={(e) => handleClubSelection(e.target.value)}
+            >
+              {universities
+                .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first
+                .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities
+                .map((club) => ( // Map over the clubs
+                  <MenuItem key={club.id} value={club.id}>
+                    {club.ClubName}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+        </DialogContent>
+        <DialogActions>
+          <MDButton
+            color="info"
+            onClick={() => setEditDialogOpenAdmin(false)}
+          >
+            Cancel
+          </MDButton>
+          <MDButton color="success" onClick={printClubData}>
+            Make Admin
+          </MDButton>
+        </DialogActions>
+      </Dialog>
+
     </MDBox>
   );
 };

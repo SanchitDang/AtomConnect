@@ -178,15 +178,15 @@ const routes = [
     route: "/universities",
     component: <UniversitiesTable />,
   },
-  {
-    type: "collapse",
-    name: "Events",
-    key: "events",
-    protected: true,
-    icon: <Icon fontSize="small">event</Icon>, // Calendar or event-specific icon
-    route: "/events",
-    component: <Dashboard />,
-  },
+  // {
+  //   type: "collapse",
+  //   name: "Events",
+  //   key: "events",
+  //   protected: true,
+  //   icon: <Icon fontSize="small">event</Icon>, // Calendar or event-specific icon
+  //   route: "/events",
+  //   component: <Dashboard />,
+  // },
 
   // {
   //   type: "collapse",
