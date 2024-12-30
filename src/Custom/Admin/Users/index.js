@@ -128,7 +128,6 @@ const UsersTable = () => {
     setSelectedClub(clubId);
   };
 
-
   const printClubData = async () => {
     try {
       // Extract the university ID
@@ -157,18 +156,150 @@ const UsersTable = () => {
       }
 
       // Add the current user to the ClubCoreMembers array
+      // await updateDoc(clubDocRef, {
+      //   ClubCoreMembers: arrayUnion({
+      //     id: currentUser.id,
+      //     displayName: currentUser.display_name,
+      //   }),
+      // });
+
+      const clubDocSnapshot = await getDoc(clubDocRef);
+      const clubData = clubDocSnapshot.data();
+
+      // Check if ClubCoreMembers exists and modify the array to insert at the 0th index
+      const updatedClubCoreMembers = [ // Create a new array with current member at 0th index
+        { id: currentUser.id, displayName: currentUser.display_name },
+        ...(clubData.ClubCoreMembers || []), // Append existing members
+      ];
+
+      // Update the document with the new array
       await updateDoc(clubDocRef, {
-        ClubCoreMembers: arrayUnion({
-          id: currentUser.id,
-          displayName: currentUser.display_name,
-        }),
+        ClubCoreMembers: updatedClubCoreMembers,
       });
 
+      const userDocRef = doc(db, "users", currentUser.id); // Replace "aasdas" with the actual document ID
+      try {
+        await updateDoc(userDocRef, {
+          admin_of: selectedClub
+        });
+        console.log("Field updated successfully!");
+      } catch (error) {
+        console.error("Error updating document: ", error);
+      }
+
       console.log("Successfully updated ClubCoreMembers.");
+      alert("Successfully updated ClubCoreMembers.");
     } catch (error) {
       console.error("Error updating club data:", error);
     }
   };
+
+  const [editDialogOpenAdmin2, setEditDialogOpenAdmin2] = useState(false);
+
+  const handleEditAdmin2 = async (user) => {
+    setCurrentUser(user);
+    setEditDialogOpenAdmin2(true);
+
+    try {
+      // Fetch Universities and Clubs
+      const uniCollection = collection(db, "Universities");
+      const uniSnapshot = await getDocs(uniCollection);
+      const universitiesData = await Promise.all(
+        uniSnapshot.docs.map(async (doc) => {
+          const clubsCollection = collection(db, "Universities", extractUniId(user.uniId), "Clubs");
+          const clubsSnapshot = await getDocs(clubsCollection);
+          const clubsData = clubsSnapshot.docs.map((clubDoc) => ({
+            id: clubDoc.id,
+            ...clubDoc.data(),
+          }));
+          setClubs(clubsData);
+          console.log("clubsData");
+          console.log(clubsData);
+          return {
+            id: doc.id,
+            uniId: doc.data().uniId,
+            clubs: clubsData,
+          };
+        })
+      );
+
+      setUniversities(universitiesData);
+    } catch (error) {
+      console.error("Error fetching universities and clubs:", error);
+    }
+  };
+
+
+  const printClubData2 = async () => {
+    try {
+      // Extract the university ID
+      const universityId = extractUniId(currentUser.uniId);
+
+      // Reference the university document
+      const universityDocRef = doc(db, "Universities", universityId);
+
+      // Fetch the university document
+      const universityDoc = await getDoc(universityDocRef);
+
+      if (!universityDoc.exists()) {
+        console.error("University not found!");
+        return;
+      }
+
+      // Reference the specific club in the Clubs collection
+      const clubDocRef = doc(db, "Universities", universityId, "Clubs", selectedClub);
+
+      // Fetch the club document
+      const clubDoc = await getDoc(clubDocRef);
+
+      if (!clubDoc.exists()) {
+        console.error("Club not found!");
+        return;
+      }
+
+      const newMember = {id: currentUser.id, displayName: currentUser.display_name};
+
+      const clubDocSnapshot = await getDoc(clubDocRef);
+
+      const clubData = clubDocSnapshot.data();
+
+      // Modify the array to insert the new member at the 1st index
+      const updatedClubCoreMembers = [
+        ...(clubData.ClubCoreMembers?.slice(0, 1) || []), // Keep the member at the 0th index
+        newMember, // Insert the new member at the 1st index
+        ...(clubData.ClubCoreMembers?.slice(1) || []), // Append the rest of the members
+      ];
+
+      // Update the document with the new array
+      await updateDoc(clubDocRef, {
+        ClubCoreMembers: updatedClubCoreMembers,
+      });
+
+      // Add the current user to the ClubCoreMembers array
+      // await updateDoc(clubDocRef, {
+      //   ClubCoreMembers: arrayUnion({
+      //     id: currentUser.id,
+      //     displayName: currentUser.display_name,
+      //   }),
+      // });
+
+      const userDocRef = doc(db, "users", currentUser.id); // Replace "aasdas" with the actual document ID
+      try {
+        await updateDoc(userDocRef, {
+          manager_of: selectedClub
+        });
+        console.log("Field updated successfully!");
+      } catch (error) {
+        console.error("Error updating document: ", error);
+      }
+
+      console.log("Successfully updated ClubCoreMembers.");
+      alert("Successfully updated ClubCoreMembers.");
+    } catch (error) {
+      console.error("Error updating club data:", error);
+    }
+  };
+
 
 
   return (
@@ -247,7 +378,7 @@ const UsersTable = () => {
                           <MDButton
                             color="warning"
                             size="small"
-                            onClick={() => handleEditAdmin(user)}
+                            onClick={() => handleEditAdmin2(user)}
                             sx={{ mt: 1, ml: 2 }}
                           >
                             Change Club Manager
@@ -332,6 +463,41 @@ const UsersTable = () => {
           </MDButton>
           <MDButton color="success" onClick={printClubData}>
             Make Admin
+          </MDButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Admin Dialog2 */}
+      <Dialog open={editDialogOpenAdmin2} onClose={() => setEditDialogOpenAdmin2(false)}>
+        <DialogTitle>Add Manager</DialogTitle>
+        <DialogContent>
+          <text>Make Manager for:</text>
+          <FormControl fullWidth margin="dense">
+            <Select
+              value={selectedClub}
+              onChange={(e) => handleClubSelection(e.target.value)}
+            >
+              {universities
+                .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first
+                .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities
+                .map((club) => ( // Map over the clubs
+                  <MenuItem key={club.id} value={club.id}>
+                    {club.ClubName}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+        </DialogContent>
+        <DialogActions>
+          <MDButton
+            color="info"
+            onClick={() => setEditDialogOpenAdmin2(false)}
+          >
+            Cancel
+          </MDButton>
+          <MDButton color="success" onClick={printClubData2}>
+            Make Manager
           </MDButton>
         </DialogActions>
       </Dialog>

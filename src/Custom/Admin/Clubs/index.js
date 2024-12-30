@@ -28,18 +28,33 @@ const ClubsTable = () => {
   const [editedData, setEditedData] = useState({});
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchClubs = async () => {
       try {
-        const usersCollection = collection(db, "Clubs");
-        const usersSnapshot = await getDocs(usersCollection);
-        const usersList = usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setUsers(usersList);
+        const universitiesCollection = collection(db, "Universities"); // Get universities collection
+        const universitiesSnapshot = await getDocs(universitiesCollection);
+
+        const allClubs = [];
+
+        // Iterate over each university
+        for (const universityDoc of universitiesSnapshot.docs) {
+          const clubsCollection = collection(universityDoc.ref, "Clubs"); // Access the Clubs sub-collection
+          const clubsSnapshot = await getDocs(clubsCollection);
+
+          // Fetch all clubs for this university
+          clubsSnapshot.docs.forEach((doc) => {
+            allClubs.push({ universityId: universityDoc.id, ...doc.data() });
+          });
+        }
+
+        console.log(allClubs)
+        // Update the state with all clubs from all universities
+        setUsers(allClubs);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching clubs data:", error);
       }
     };
 
-    fetchUsers();
+    fetchClubs();
   }, []);
 
   const handleEditUser = (user) => {
@@ -50,13 +65,25 @@ const ClubsTable = () => {
 
   const handleSaveUser = async () => {
     if (!currentUser) return;
+
     try {
-      await updateDoc(doc(db, "Clubs", currentUser.id), editedData);
+      // Get reference to the specific university's Clubs sub-collection
+      const universityDocRef = doc(db, "Universities", currentUser.uniId);
+      const clubsCollectionRef = collection(universityDocRef, "Clubs");
+
+      // Get the specific club document to update
+      const clubDocRef = doc(clubsCollectionRef, currentUser.uid); // Assuming user.id corresponds to the club document ID
+
+      // Update the club data in the specific university's Clubs sub-collection
+      await updateDoc(clubDocRef, editedData);
+
+      // Update the state to reflect the changes
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
-          user.id === currentUser.id ? { ...user, ...editedData } : user
+          user.uid === currentUser.uid ? { ...user, ...editedData } : user
         )
       );
+
       setEditDialogOpen(false);
       setCurrentUser(null);
       alert("User updated successfully!");
@@ -69,7 +96,15 @@ const ClubsTable = () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
     if (confirmDelete) {
       try {
-        await deleteDoc(doc(db, "Clubs", userId));
+        // Get reference to the university's Clubs sub-collection
+        const universityDocRef = doc(db, "Universities", currentUser.uniId);
+        const clubsCollectionRef = collection(universityDocRef, "Clubs");
+
+        // Delete the specific club document
+        const clubDocRef = doc(clubsCollectionRef, userId);
+        await deleteDoc(clubDocRef);
+
+        // Update state to reflect the deletion
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
         alert("User deleted successfully.");
       } catch (error) {
@@ -80,9 +115,11 @@ const ClubsTable = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedClubId, setSelectedClubId] = useState(null);
+  const [selectedUniId, setSelectedUniId] = useState(null);
 
-  const handleOpenModal = (id) => {
+  const handleOpenModal = (id, uniId) => {
     setSelectedClubId(id); // Set the clubId dynamically
+    setSelectedUniId(uniId); // Set the clubId dynamically
     setModalOpen(true); // Open the modal
   };
 
@@ -132,7 +169,7 @@ const ClubsTable = () => {
                       </TableCell>
                     </TableRow>
                     {users.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.uid}>
                         <TableCell>
                           <img
                             src={user.ClubLogo}
@@ -140,7 +177,7 @@ const ClubsTable = () => {
                             style={{ width: "50px", height: "50px" }}
                           />
                         </TableCell>
-                        <TableCell>{user.id}</TableCell>
+                        <TableCell>{user.uid}</TableCell>
                         <TableCell>{user.ClubUniversity}</TableCell>
                         <TableCell>{user.ClubName}</TableCell>
                         <TableCell>
@@ -155,7 +192,7 @@ const ClubsTable = () => {
                           <MDButton
                             color="error"
                             size="small"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDeleteUser(user.uid)}
                             sx={{ mt: 1, ml: 2 }}
                           >
                             Delete
@@ -163,7 +200,7 @@ const ClubsTable = () => {
                           <MDButton
                             color="warning"
                             size="small"
-                            onClick={() => handleOpenModal(user.id)} // Pass user.id dynamically
+                            onClick={() => handleOpenModal(user.uid, user.uniId)} // Pass user.id dynamically
                             sx={{ mt: 1, ml: 2 }}
                           >
                             Show Posts
@@ -184,7 +221,7 @@ const ClubsTable = () => {
 
       {/* Modal */}
       {modalOpen && selectedClubId && (
-        <PostModal open={modalOpen} onClose={handleCloseModal} clubId={selectedClubId} />
+        <PostModal open={modalOpen} onClose={handleCloseModal} clubId={selectedClubId} uniId={selectedUniId}/>
       )}
 
       {/* Edit Dialog */}

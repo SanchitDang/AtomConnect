@@ -3,21 +3,27 @@ import { Modal, Box, Typography, CircularProgress } from '@mui/material';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
 // eslint-disable-next-line react/prop-types
-const PostModal = ({ open, onClose, clubId }) => {
+const PostModal = ({ open, onClose, clubId, uniId }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (clubId && open) {
-      fetchPosts(clubId);
+      console.log("asdassdfased");
+      console.log(clubId)
+      console.log(uniId)
+      fetchPosts(uniId, clubId);
     }
   }, [clubId, open]);
 
-  const fetchPosts = async (clubId) => {
+  const fetchPosts = async (uniId, clubId) => {
     setLoading(true);
     try {
       const db = getFirestore();
-      const postsRef = collection(db, 'Clubs', clubId, 'Posts');
+
+      // Corrected path to the Posts collection inside the specific university and club
+      const postsRef = collection(db, 'Universities', uniId, 'Clubs', clubId, 'Posts');
+
       const querySnapshot = await getDocs(postsRef);
 
       const postList = querySnapshot.docs.map((doc) => ({
@@ -31,6 +37,7 @@ const PostModal = ({ open, onClose, clubId }) => {
       setLoading(false);
     }
   };
+
 
   return (
     <Modal open={open} onClose={onClose}>
