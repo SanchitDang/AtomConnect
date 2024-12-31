@@ -22,6 +22,7 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 
+import useMediaQuery from '@mui/material/useMediaQuery';
 const db = getFirestore(firebaseApp);
 
 const UsersTable = () => {
@@ -45,7 +46,7 @@ const UsersTable = () => {
 
   const handleEditUser = (user) => {
     setCurrentUser(user);
-    setEditedData({ email: user.email, display_name: user.display_name });
+    setEditedData({ email: user.email, display_name: user.display_name, location: user.location, bio: user.bio });
     setEditDialogOpen(true);
   };
 
@@ -257,7 +258,7 @@ const UsersTable = () => {
         return;
       }
 
-      const newMember = {id: currentUser.id, displayName: currentUser.display_name};
+      const newMember = { id: currentUser.id, displayName: currentUser.display_name };
 
       const clubDocSnapshot = await getDoc(clubDocRef);
 
@@ -265,14 +266,14 @@ const UsersTable = () => {
 
       // Modify the array to insert the new member at the 1st index
       const updatedClubCoreMembers = [
-        ...(clubData.ClubCoreMembers?.slice(0, 1) || []), // Keep the member at the 0th index
+        ...(clubData.ClubCoreManagers?.slice(0, 1) || []), // Keep the member at the 0th index
         newMember, // Insert the new member at the 1st index
-        ...(clubData.ClubCoreMembers?.slice(1) || []), // Append the rest of the members
+        ...(clubData.ClubCoreManagers?.slice(1) || []), // Append the rest of the members
       ];
 
       // Update the document with the new array
       await updateDoc(clubDocRef, {
-        ClubCoreMembers: updatedClubCoreMembers,
+        ClubCoreManagers: updatedClubCoreMembers,
       });
 
       // Add the current user to the ClubCoreMembers array
@@ -300,10 +301,11 @@ const UsersTable = () => {
     }
   };
 
+  const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
 
 
   return (
-    <MDBox pt={6} pb={3} pl={40}>
+    <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Card>
@@ -416,6 +418,26 @@ const UsersTable = () => {
             value={editedData.display_name || ""}
             onChange={(e) =>
               setEditedData((prev) => ({ ...prev, display_name: e.target.value }))
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Bio"
+            type="text"
+            fullWidth
+            value={editedData.bio || ""}
+            onChange={(e) =>
+              setEditedData((prev) => ({ ...prev, bio: e.target.value }))
+            }
+          />
+          <TextField
+            margin="dense"
+            label="Location"
+            type="text"
+            fullWidth
+            value={editedData.location || ""}
+            onChange={(e) =>
+              setEditedData((prev) => ({ ...prev, location: e.target.value }))
             }
           />
         </DialogContent>

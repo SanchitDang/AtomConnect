@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Box, Typography, CircularProgress } from '@mui/material';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
+import useMediaQuery from '@mui/material/useMediaQuery';
 // eslint-disable-next-line react/prop-types
 const PostModal = ({ open, onClose, clubId, uniId }) => {
   const [posts, setPosts] = useState([]);

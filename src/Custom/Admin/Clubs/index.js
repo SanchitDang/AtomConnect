@@ -19,13 +19,37 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import PostModal from "../Posts";
 
+import useMediaQuery from '@mui/material/useMediaQuery';
 const db = getFirestore(firebaseApp);
+import CloseIcon from "@mui/icons-material/Close";
+import PropTypes from "prop-types";
+import Sidenav from "../../../examples/Sidenav";
+import { Box, Modal } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import brandDark from "../../../assets/images/logo-ct-dark.png";
+import brandWhite from "../../../assets/images/logo-ct.png";
+import routes from "../../../routes";
+import { useMaterialUIController } from "../../../context";
+import Sidenav2 from "../../../examples/Sidenav/index2";
 
+// Material Dashboard 2 React routes
 const ClubsTable = () => {
   const [users, setUsers] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [editedData, setEditedData] = useState({});
+
+  const [controller, dispatch] = useMaterialUIController();
+  const {
+    miniSidenav,
+    direction,
+    layout,
+    openConfigurator,
+    sidenavColor,
+    transparentSidenav,
+    whiteSidenav,
+    darkMode,
+  } = controller;
 
   useEffect(() => {
     const fetchClubs = async () => {
@@ -128,8 +152,15 @@ const ClubsTable = () => {
     setSelectedClubId(null); // Reset the clubId
   };
 
+  const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
+  const [open, setOpen] = useState(false);
+
+  // Handlers to open and close modal
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
   return (
-    <MDBox pt={6} pb={3} pl={40}>
+    <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Card>
@@ -219,6 +250,9 @@ const ClubsTable = () => {
         </Grid>
       </Grid>
 
+      {/* Button to open the modal */}
+      <button onClick={handleOpen}>Open Sidenav</button>
+
       {/* Modal */}
       {modalOpen && selectedClubId && (
         <PostModal open={modalOpen} onClose={handleCloseModal} clubId={selectedClubId} uniId={selectedUniId}/>
@@ -254,6 +288,41 @@ const ClubsTable = () => {
           </MDButton>
         </DialogActions>
       </Dialog>
+
+
+      {/* Modal */}
+      <Modal open={open} onClose={handleClose}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {/* Sidenav component */}
+          <Sidenav2
+            color={sidenavColor}
+            brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+            brandName="Material Dashboard 2"
+            routes={routes}
+          />
+        </Box>
+      </Modal>
+
     </MDBox>
   );
 };

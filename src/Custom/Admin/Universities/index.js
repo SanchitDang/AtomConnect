@@ -18,6 +18,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 
+import useMediaQuery from '@mui/material/useMediaQuery';
 const db = getFirestore(firebaseApp);
 
 const UniversitiesTable = () => {
@@ -77,8 +78,11 @@ const UniversitiesTable = () => {
     }
   };
 
+  const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
+
+
   return (
-    <MDBox pt={6} pb={3} pl={40}>
+    <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
       <Grid container spacing={6}>
         <Grid item xs={12}>
           <Card>
