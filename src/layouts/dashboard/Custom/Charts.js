@@ -131,7 +131,7 @@ const CampaignCharts = () => {
       {/*</Grid>*/}
 
       {/* User Type Breakdown (Conversion) */}
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={6} ml={3}>
         <Card style={{ height: '350px', overflow: 'hidden' }}>
           <CardContent>
             <Typography variant="h6">Classification</Typography>

@@ -17,8 +17,16 @@ import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
-
+import MenuIcon from '@mui/icons-material/Menu'; // Import the Menu icon
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { Box, Modal } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import Sidenav2 from "../../../examples/Sidenav/index2";
+import brandDark from "../../../assets/images/logo-ct-dark.png";
+import brandWhite from "../../../assets/images/logo-ct.png";
+import routes from "../../../routes";
+import { useMaterialUIController } from "../../../context";
 const db = getFirestore(firebaseApp);
 
 const UniversitiesTable = () => {
@@ -26,6 +34,25 @@ const UniversitiesTable = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [editedData, setEditedData] = useState({});
+
+  const [open, setOpen] = useState(false);
+
+  // Handlers to open and close modal
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+
+  const [controller, dispatch] = useMaterialUIController();
+  const {
+    miniSidenav,
+    direction,
+    layout,
+    openConfigurator,
+    sidenavColor,
+    transparentSidenav,
+    whiteSidenav,
+    darkMode,
+  } = controller;
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -95,10 +122,20 @@ const UniversitiesTable = () => {
               bgColor="info"
               borderRadius="lg"
               coloredShadow="info"
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
             >
               <MDTypography variant="h6" color="white">
                 University Management
               </MDTypography>
+              {/* Menu icon to open the sidenav */}
+              {!isDesktop && (
+                <MenuIcon
+                  style={{ cursor: "pointer", color: "white" }}
+                  onClick={handleOpen}
+                />
+              )}
             </MDBox>
             <MDBox p={3}>
               <TableContainer>
@@ -156,6 +193,39 @@ const UniversitiesTable = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Modal */}
+      <Modal open={open} onClose={handleClose}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {/* Sidenav component */}
+          <Sidenav2
+            color={sidenavColor}
+            brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+            brandName="Material Dashboard 2"
+            routes={routes}
+          />
+        </Box>
+      </Modal>
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>

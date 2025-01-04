@@ -31,7 +31,7 @@ import brandWhite from "../../../assets/images/logo-ct.png";
 import routes from "../../../routes";
 import { useMaterialUIController } from "../../../context";
 import Sidenav2 from "../../../examples/Sidenav/index2";
-
+import MenuIcon from '@mui/icons-material/Menu'; // Import the Menu icon
 // Material Dashboard 2 React routes
 const ClubsTable = () => {
   const [users, setUsers] = useState([]);
@@ -173,10 +173,20 @@ const ClubsTable = () => {
               bgColor="info"
               borderRadius="lg"
               coloredShadow="info"
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
             >
               <MDTypography variant="h6" color="white">
                 Club Management
               </MDTypography>
+              {/* Menu icon to open the sidenav */}
+              {!isDesktop && (
+                <MenuIcon
+                  style={{ cursor: "pointer", color: "white" }}
+                  onClick={handleOpen}
+                />
+              )}
             </MDBox>
             <MDBox p={3}>
               <TableContainer>
@@ -236,9 +246,6 @@ const ClubsTable = () => {
                           >
                             Show Posts
                           </MDButton>
-
-
-
                         </TableCell>
                       </TableRow>
                     ))}
@@ -250,12 +257,14 @@ const ClubsTable = () => {
         </Grid>
       </Grid>
 
-      {/* Button to open the modal */}
-      <button onClick={handleOpen}>Open Sidenav</button>
-
       {/* Modal */}
       {modalOpen && selectedClubId && (
-        <PostModal open={modalOpen} onClose={handleCloseModal} clubId={selectedClubId} uniId={selectedUniId}/>
+        <PostModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          clubId={selectedClubId}
+          uniId={selectedUniId}
+        />
       )}
 
       {/* Edit Dialog */}
@@ -289,7 +298,6 @@ const ClubsTable = () => {
         </DialogActions>
       </Dialog>
 
-
       {/* Modal */}
       <Modal open={open} onClose={handleClose}>
         <Box
@@ -322,7 +330,6 @@ const ClubsTable = () => {
           />
         </Box>
       </Modal>
-
     </MDBox>
   );
 };
