@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { firebaseApp } from "../../../firebase.js";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -24,14 +24,18 @@ const db = getFirestore(firebaseApp);
 import CloseIcon from "@mui/icons-material/Close";
 import PropTypes from "prop-types";
 import Sidenav from "../../../examples/Sidenav";
-import { Box, Modal } from "@mui/material";
+import { Box, Modal, Typography } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import brandDark from "../../../assets/images/logo-ct-dark.png";
 import brandWhite from "../../../assets/images/logo-ct.png";
 import routes from "../../../routes";
 import { useMaterialUIController } from "../../../context";
 import Sidenav2 from "../../../examples/Sidenav/index2";
-import MenuIcon from '@mui/icons-material/Menu'; // Import the Menu icon
+import MenuIcon from '@mui/icons-material/Menu';
+import ListItemText from "@mui/material/ListItemText";
+import ListItem from "@mui/material/ListItem";
+import List from "@mui/material/List";
+import Button from "@mui/material/Button"; // Import the Menu icon
 // Material Dashboard 2 React routes
 const ClubsTable = () => {
   const [users, setUsers] = useState([]);
@@ -159,6 +163,106 @@ const ClubsTable = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  ////////////////////////////////////////
+
+  const [universities, setUniversities] = useState([]);
+  const [selectedUniversity, setSelectedUniversity] = useState(null);
+  const [isUniversityDialogOpen, setUniversityDialogOpen] = useState(false);
+  const [isAddClubOpen, setIsAddClubOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    ClubInfo: "",
+    ClubName: "",
+    ClubRating: "",
+    ClubUniversity: "",
+    uid: "",
+    uniId: "",
+  });
+
+// Fetch universities from Firestore
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Universities"));
+        const uniList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setUniversities(uniList);
+      } catch (error) {
+        console.error("Error fetching universities:", error);
+      }
+    };
+
+    fetchUniversities();
+  }, []);
+
+// Handle selection of university
+  const handleUniversitySelect = (university) => {
+    setSelectedUniversity(university);
+    setFormData((prev) => ({
+      ...prev,
+      ClubUniversity: university.uniName,
+      uniId: university.id,
+      uid: university.id,
+    }));
+    setUniversityDialogOpen(false);
+    setIsAddClubOpen(true);
+  };
+
+// Handle input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+// Handle form submission
+  const handleSubmit = async () => {
+    try {
+      if (!selectedUniversity) {
+        alert("Please select a university first!");
+        return;
+      }
+
+      // Add a new document to the "Clubs" collection within the selected university
+      const clubsCollectionRef = collection(db, `Universities/${selectedUniversity.id}/Clubs`);
+      const docRef = await addDoc(clubsCollectionRef, {
+        ClubInfo: formData.ClubInfo,
+        ClubName: formData.ClubName,
+        ClubRating: formData.ClubRating,
+        ClubUniversity: formData.ClubUniversity,
+        uid: formData.uid,
+        uniId: formData.uniId,
+      });
+
+      alert("Club added successfully with ID: " + docRef.id);
+
+      // Reset the form
+      setFormData({
+        ClubInfo: "",
+        ClubName: "",
+        ClubRating: "",
+        ClubUniversity: selectedUniversity.uniName,
+        uid: "",
+        uniId: selectedUniversity.id,
+      });
+
+      setIsAddClubOpen(false);
+      setSelectedUniversity(null);
+    } catch (error) {
+      console.error("Error adding club:", error);
+      alert("An error occurred while adding the club.");
+    }
+  };
+
+// Handle dialog close
+  const closeDialog = () => {
+    setUniversityDialogOpen(false);
+    setSelectedUniversity(null);
+  };
+
+  ///////////////////////////////////////////
+
+
   return (
     <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
       <Grid container spacing={6}>
@@ -180,6 +284,14 @@ const ClubsTable = () => {
               <MDTypography variant="h6" color="white">
                 Club Management
               </MDTypography>
+              <MDButton
+                color="success"
+                size="small"
+                onClick={() => setUniversityDialogOpen(true)} // Set the dialog state to open
+              >
+                + Add Club
+              </MDButton>
+
               {/* Menu icon to open the sidenav */}
               {!isDesktop && (
                 <MenuIcon
@@ -256,6 +368,105 @@ const ClubsTable = () => {
           </Card>
         </Grid>
       </Grid>
+
+
+      <Modal
+        open={isUniversityDialogOpen}
+        onClose={closeDialog}
+        aria-labelledby="university-dialog-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="university-dialog-title" variant="h6" component="h3">
+            Select a University
+          </Typography>
+          <List>
+            {universities.map((university) => (
+              <ListItem
+                button
+                key={university.id}
+                onClick={() => handleUniversitySelect(university)}
+              >
+                <ListItemText primary={university.uniName} secondary={university.uniPlace} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Modal>
+
+      <Modal
+        open={isAddClubOpen}
+        onClose={() => setIsAddClubOpen(false)}
+        aria-labelledby="add-club-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="add-club-modal-title" variant="h6" component="h3">
+            Add New Club
+          </Typography>
+          <form>
+            <TextField
+              label="Club Info"
+              name="ClubInfo"
+              value={formData.ClubInfo}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Club Name"
+              name="ClubName"
+              value={formData.ClubName}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Club Rating"
+              name="ClubRating"
+              value={formData.ClubRating}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mt: 3,
+              }}
+            >
+              <Button onClick={handleSubmit}>Submit</Button>
+              <Button onClick={() => setIsAddClubOpen(false)}>Cancel</Button>
+            </Box>
+          </form>
+        </Box>
+      </Modal>
+
+
+
 
       {/* Modal */}
       {modalOpen && selectedClubId && (

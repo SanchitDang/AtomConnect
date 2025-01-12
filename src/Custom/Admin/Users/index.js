@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc,arrayUnion, getDoc  } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  arrayUnion,
+  getDoc,
+  addDoc,
+} from "firebase/firestore";
 import { firebaseApp } from "../../../firebase.js";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -23,7 +33,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import MenuIcon from '@mui/icons-material/Menu'; // Import the Menu icon
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Modal } from "@mui/material";
+import { Box, Modal, Typography } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import Sidenav2 from "../../../examples/Sidenav/index2";
@@ -31,7 +41,9 @@ import brandDark from "../../../assets/images/logo-ct-dark.png";
 import brandWhite from "../../../assets/images/logo-ct.png";
 import routes from "../../../routes";
 import { useMaterialUIController } from "../../../context";
+import Button from "@mui/material/Button";
 const db = getFirestore(firebaseApp);
+import { getDatabase, ref, push } from "firebase/database";
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -123,6 +135,8 @@ const UsersTable = () => {
       const uniSnapshot = await getDocs(uniCollection);
       const universitiesData = await Promise.all(
         uniSnapshot.docs.map(async (doc) => {
+          console.log("current user uniId")
+          console.log(extractUniId(user.uniId))
           const clubsCollection = collection(db, "Universities", extractUniId(user.uniId), "Clubs");
           const clubsSnapshot = await getDocs(clubsCollection);
           const clubsData = clubsSnapshot.docs.map((clubDoc) => ({
@@ -367,6 +381,51 @@ const UsersTable = () => {
 
   const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
 
+  const [isOpenAddUser, setIsOpenAddUser] = useState(false);
+  const [formData, setFormData] = useState({
+    bio: "",
+    course: "",
+    display_name: "",
+    email: "",
+    location: "",
+    phone_number: "",
+  });
+
+  // Handle modal toggle
+  const toggleModal = () => {
+    setIsOpenAddUser(!isOpenAddUser);
+  };
+
+  // Handle input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    try {
+      // Add a new document to the "users" collection in Firestore
+      const docRef = await addDoc(collection(db, "users"), formData);
+      alert("User added successfully with ID: " + docRef.id);
+
+      // Reset the form after successful submission
+      setFormData({
+        bio: "",
+        course: "",
+        display_name: "",
+        email: "",
+        location: "",
+        phone_number: "",
+      });
+
+      // Close the modal
+      toggleModal();
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert("An error occurred while adding the user.");
+    }
+  };
 
   return (
     <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
@@ -389,6 +448,13 @@ const UsersTable = () => {
               <MDTypography variant="h6" color="white">
                 User Management
               </MDTypography>
+              <MDButton
+                color="success"
+                size="small"
+                onClick={toggleModal}
+              >
+                + Add User
+              </MDButton>
               {/* Menu icon to open the sidenav */}
               {!isDesktop && (
                 <MenuIcon
@@ -561,6 +627,102 @@ const UsersTable = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Modal */}
+      <Modal
+        open={isOpenAddUser}
+        onClose={toggleModal}
+        aria-labelledby="add-user-modal-title"
+        aria-describedby="add-user-modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography
+            id="add-user-modal-title"
+            variant="h6"
+            component="h3"
+            sx={{ mb: 2 }}
+          >
+            Add New User
+          </Typography>
+          <form>
+            <TextField
+              label="Bio"
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Course"
+              name="course"
+              value={formData.course}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Display Name"
+              name="display_name"
+              value={formData.display_name}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="Phone Number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mt: 3,
+              }}
+            >
+              <Button onClick={handleSubmit}>
+                Submit
+              </Button>
+              <Button  onClick={toggleModal}>
+                Cancel
+              </Button>
+            </Box>
+          </form>
+        </Box>
+      </Modal>
+
       {/* Edit Admin Dialog */}
       <Dialog open={editDialogOpenAdmin} onClose={() => setEditDialogOpenAdmin(false)}>
         <DialogTitle>Edit Admin</DialogTitle>
@@ -571,14 +733,20 @@ const UsersTable = () => {
               value={selectedClub}
               onChange={(e) => handleClubSelection(e.target.value)}
             >
-              {universities
-                .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first
-                .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities
+              {clubs
                 .map((club) => ( // Map over the clubs
                   <MenuItem key={club.id} value={club.id}>
                     {club.ClubName}
                   </MenuItem>
                 ))}
+              {/*{universities*/}
+              {/*  .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first*/}
+              {/*  .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities*/}
+              {/*  .map((club) => ( // Map over the clubs*/}
+              {/*    <MenuItem key={club.id} value={club.id}>*/}
+              {/*      {club.ClubName}*/}
+              {/*    </MenuItem>*/}
+              {/*  ))}*/}
             </Select>
           </FormControl>
 
@@ -606,14 +774,20 @@ const UsersTable = () => {
               value={selectedClub}
               onChange={(e) => handleClubSelection(e.target.value)}
             >
-              {universities
-                .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first
-                .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities
+              {clubs
                 .map((club) => ( // Map over the clubs
                   <MenuItem key={club.id} value={club.id}>
                     {club.ClubName}
                   </MenuItem>
                 ))}
+              {/*{universities*/}
+              {/*  .filter((uni) => uni.uniId === currentUser.uniId) // Filter universities first*/}
+              {/*  .flatMap((uni) => uni.clubs) // Flatten clubs from the filtered universities*/}
+              {/*  .map((club) => ( // Map over the clubs*/}
+              {/*    <MenuItem key={club.id} value={club.id}>*/}
+              {/*      {club.ClubName}*/}
+              {/*    </MenuItem>*/}
+              {/*  ))}*/}
             </Select>
           </FormControl>
 

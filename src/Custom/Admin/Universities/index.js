@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { firebaseApp } from "../../../firebase.js";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -19,7 +19,7 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MenuIcon from '@mui/icons-material/Menu'; // Import the Menu icon
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Modal } from "@mui/material";
+import { Box, Modal, Typography } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import Sidenav2 from "../../../examples/Sidenav/index2";
@@ -27,6 +27,7 @@ import brandDark from "../../../assets/images/logo-ct-dark.png";
 import brandWhite from "../../../assets/images/logo-ct.png";
 import routes from "../../../routes";
 import { useMaterialUIController } from "../../../context";
+import Button from "@mui/material/Button";
 const db = getFirestore(firebaseApp);
 
 const UniversitiesTable = () => {
@@ -107,6 +108,47 @@ const UniversitiesTable = () => {
 
   const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
 
+  const [isOpenAddUniversity, setIsOpenAddUniversity] = useState(false);
+  const [formData, setFormData] = useState({
+    uniInfo: "",
+    uniLink: "",
+    uniName: "",
+    uniPlace: "",
+  });
+
+// Handle modal toggle
+  const toggleModal = () => {
+    setIsOpenAddUniversity(!isOpenAddUniversity);
+  };
+
+// Handle input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+// Handle form submission
+  const handleSubmit = async () => {
+    try {
+      // Add a new document to the "Universities" collection in Firestore
+      const docRef = await addDoc(collection(db, "Universities"), formData);
+      alert("University added successfully with ID: " + docRef.id);
+
+      // Reset the form after successful submission
+      setFormData({
+        uniInfo: "",
+        uniLink: "",
+        uniName: "",
+        uniPlace: "",
+      });
+
+      // Close the modal
+      toggleModal();
+    } catch (error) {
+      console.error("Error adding university:", error);
+      alert("An error occurred while adding the university.");
+    }
+  };
 
   return (
     <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
@@ -129,6 +171,13 @@ const UniversitiesTable = () => {
               <MDTypography variant="h6" color="white">
                 University Management
               </MDTypography>
+              <MDButton
+                color="success"
+                size="small"
+                onClick={toggleModal}
+              >
+                + Add University
+              </MDButton>
               {/* Menu icon to open the sidenav */}
               {!isDesktop && (
                 <MenuIcon
@@ -193,6 +242,80 @@ const UniversitiesTable = () => {
           </Card>
         </Grid>
       </Grid>
+
+      <Modal
+        open={isOpenAddUniversity}
+        onClose={toggleModal}
+        aria-labelledby="add-university-modal-title"
+        aria-describedby="add-university-modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography
+            id="add-university-modal-title"
+            variant="h6"
+            component="h3"
+            sx={{ mb: 2 }}
+          >
+            Add New University
+          </Typography>
+          <form>
+            <TextField
+              label="University Info"
+              name="uniInfo"
+              value={formData.uniInfo}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="University Link"
+              name="uniLink"
+              value={formData.uniLink}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="University Name"
+              name="uniName"
+              value={formData.uniName}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              label="University Place"
+              name="uniPlace"
+              value={formData.uniPlace}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mt: 3,
+              }}
+            >
+              <Button onClick={handleSubmit}>Submit</Button>
+              <Button onClick={toggleModal}>Cancel</Button>
+            </Box>
+          </form>
+        </Box>
+      </Modal>
 
       {/* Modal */}
       <Modal open={open} onClose={handleClose}>
