@@ -114,6 +114,9 @@ const UniversitiesTable = () => {
     uniLink: "",
     uniName: "",
     uniPlace: "",
+    uid: "",
+    uniId: "",
+    uniLogo: "",
   });
 
 // Handle modal toggle
@@ -132,6 +135,11 @@ const UniversitiesTable = () => {
     try {
       // Add a new document to the "Universities" collection in Firestore
       const docRef = await addDoc(collection(db, "Universities"), formData);
+      await updateDoc(docRef, {
+        uniId: `/Universities/${docRef.id}`,
+        uid: docRef.id
+      });
+
       alert("University added successfully with ID: " + docRef.id);
 
       // Reset the form after successful submission

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+} from "firebase/firestore";
 import { firebaseApp } from "../../../firebase.js";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -19,7 +27,7 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import PostModal from "../Posts";
 
-import useMediaQuery from '@mui/material/useMediaQuery';
+import useMediaQuery from "@mui/material/useMediaQuery";
 const db = getFirestore(firebaseApp);
 import CloseIcon from "@mui/icons-material/Close";
 import PropTypes from "prop-types";
@@ -31,7 +39,7 @@ import brandWhite from "../../../assets/images/logo-ct.png";
 import routes from "../../../routes";
 import { useMaterialUIController } from "../../../context";
 import Sidenav2 from "../../../examples/Sidenav/index2";
-import MenuIcon from '@mui/icons-material/Menu';
+import MenuIcon from "@mui/icons-material/Menu";
 import ListItemText from "@mui/material/ListItemText";
 import ListItem from "@mui/material/ListItem";
 import List from "@mui/material/List";
@@ -74,7 +82,7 @@ const ClubsTable = () => {
           });
         }
 
-        console.log(allClubs)
+        console.log(allClubs);
         // Update the state with all clubs from all universities
         setUsers(allClubs);
       } catch (error) {
@@ -107,9 +115,7 @@ const ClubsTable = () => {
 
       // Update the state to reflect the changes
       setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.uid === currentUser.uid ? { ...user, ...editedData } : user
-        )
+        prevUsers.map((user) => (user.uid === currentUser.uid ? { ...user, ...editedData } : user))
       );
 
       setEditDialogOpen(false);
@@ -156,7 +162,7 @@ const ClubsTable = () => {
     setSelectedClubId(null); // Reset the clubId
   };
 
-  const isDesktop = useMediaQuery('(min-width: 1024px)'); // Adjust breakpoint as per your requirements
+  const isDesktop = useMediaQuery("(min-width: 1024px)"); // Adjust breakpoint as per your requirements
   const [open, setOpen] = useState(false);
 
   // Handlers to open and close modal
@@ -176,9 +182,17 @@ const ClubsTable = () => {
     ClubUniversity: "",
     uid: "",
     uniId: "",
+    ClubId: "",
+    ClubLogo: "",
+    ClubCoreManagers: [],
+    ClubCoreMembers: [],
+    ClubMembers: [],
+    ClubReviews: [],
+    created_at: Date,
+    info: "",
   });
 
-// Fetch universities from Firestore
+  // Fetch universities from Firestore
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
@@ -196,7 +210,7 @@ const ClubsTable = () => {
     fetchUniversities();
   }, []);
 
-// Handle selection of university
+  // Handle selection of university
   const handleUniversitySelect = (university) => {
     setSelectedUniversity(university);
     setFormData((prev) => ({
@@ -209,13 +223,13 @@ const ClubsTable = () => {
     setIsAddClubOpen(true);
   };
 
-// Handle input change
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-// Handle form submission
+  // Handle form submission
   const handleSubmit = async () => {
     try {
       if (!selectedUniversity) {
@@ -232,6 +246,17 @@ const ClubsTable = () => {
         ClubUniversity: formData.ClubUniversity,
         uid: formData.uid,
         uniId: formData.uniId,
+        ClubLogo: "",
+        ClubCoreManagers: [],
+        ClubCoreMembers: [],
+        ClubMembers: [],
+        ClubReviews: [],
+        created_at: Date(),
+        info: "",
+      });
+
+      await updateDoc(docRef, {
+        ClubId: `/Clubs/${docRef.id}`
       });
 
       alert("Club added successfully with ID: " + docRef.id);
@@ -254,14 +279,13 @@ const ClubsTable = () => {
     }
   };
 
-// Handle dialog close
+  // Handle dialog close
   const closeDialog = () => {
     setUniversityDialogOpen(false);
     setSelectedUniversity(null);
   };
 
   ///////////////////////////////////////////
-
 
   return (
     <MDBox pt={6} pb={3} pl={isDesktop ? 40 : 0}>
@@ -294,10 +318,7 @@ const ClubsTable = () => {
 
               {/* Menu icon to open the sidenav */}
               {!isDesktop && (
-                <MenuIcon
-                  style={{ cursor: "pointer", color: "white" }}
-                  onClick={handleOpen}
-                />
+                <MenuIcon style={{ cursor: "pointer", color: "white" }} onClick={handleOpen} />
               )}
             </MDBox>
             <MDBox p={3}>
@@ -368,7 +389,6 @@ const ClubsTable = () => {
           </Card>
         </Grid>
       </Grid>
-
 
       <Modal
         open={isUniversityDialogOpen}
@@ -464,9 +484,6 @@ const ClubsTable = () => {
           </form>
         </Box>
       </Modal>
-
-
-
 
       {/* Modal */}
       {modalOpen && selectedClubId && (

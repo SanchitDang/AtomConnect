@@ -44,6 +44,9 @@ import { useMaterialUIController } from "../../../context";
 import Button from "@mui/material/Button";
 const db = getFirestore(firebaseApp);
 import { getDatabase, ref, push } from "firebase/database";
+import { FieldValue } from "firebase/firestore";
+import firebase from 'firebase/app';
+import 'firebase/firestore'; // Import Firestore
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -389,6 +392,16 @@ const UsersTable = () => {
     email: "",
     location: "",
     phone_number: "",
+    connections: [],
+    created_time: Date(),
+    isEditingProfile: false,
+    list_of_clubs: [],
+    photo_url: "",
+    received_request: [],
+    sent_request: [],
+    uid: "",
+    uniId: "",
+    uniName: "",
   });
 
   // Handle modal toggle
